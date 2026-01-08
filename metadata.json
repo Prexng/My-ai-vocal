@@ -1,0 +1,7 @@
+{
+  "name": "DeutschMaster AI",
+  "description": "An intelligent German vocabulary learning app that uses Gemini AI to analyze words, provide detailed linguistic data, and generate personalized quizzes for effective memorization.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

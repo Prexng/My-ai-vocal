@@ -48,38 +48,27 @@ const App: React.FC = () => {
     isInitialMount.current = false;
   }, [savedWords]);
 
-  /**
-   * ĐỒNG BỘ 2 CHIỀU THỰC SỰ:
-   * 1. Pull: Lấy từ Sheets về.
-   * 2. Merge: So sánh với local.
-   * 3. Push: Gửi những từ local "mới" lên Sheets.
-   */
   const handleSync = useCallback(async (forcedUrl?: string) => {
     const url = forcedUrl || sheetsUrl;
     if (!url) return;
     
     setIsSyncing(true);
     try {
-      // BƯỚC 1: PULL (Lấy từ Sheets về)
       const remoteWords = await syncFromSheets(url);
       
-      // BƯỚC 2: MERGE (Gộp dữ liệu)
       setSavedWords(localWords => {
         const merged = [...localWords];
         const pushQueue: GermanWord[] = [];
 
-        // Kiểm tra từ remote có trong local chưa
         remoteWords.forEach(rw => {
           const localIdx = merged.findIndex(lw => lw.id === rw.id || lw.word.toLowerCase() === rw.word.toLowerCase());
           if (localIdx === -1) {
             merged.push(rw);
           } else {
-            // Nếu có rồi, cập nhật mastery nếu remote cao hơn hoặc giữ nguyên
             merged[localIdx].masteryLevel = Math.max(merged[localIdx].masteryLevel, rw.masteryLevel || 0);
           }
         });
 
-        // BƯỚC 3: PUSH (Tìm từ local chưa có trên remote để đẩy lên)
         localWords.forEach(lw => {
           const existsOnRemote = remoteWords.some(rw => rw.id === lw.id || rw.word.toLowerCase() === lw.word.toLowerCase());
           if (!existsOnRemote) {
@@ -87,9 +76,7 @@ const App: React.FC = () => {
           }
         });
 
-        // Thực thi đẩy lên (Async)
         if (pushQueue.length > 0) {
-          console.log(`Đang đẩy ${pushQueue.length} từ mới lên Sheets...`);
           pushQueue.forEach(w => saveToSheets(url, 'ADD_WORD', w));
         }
 
@@ -106,7 +93,6 @@ const App: React.FC = () => {
     }
   }, [sheetsUrl]);
 
-  // Tự động đồng bộ khi dán URL mới hoặc khởi động
   useEffect(() => {
     if (sheetsUrl && isInitialMount.current) {
       handleSync();
@@ -131,7 +117,6 @@ const App: React.FC = () => {
         const isDuplicate = prev.some(w => w.word.toLowerCase() === newWord.word.toLowerCase());
         if (!isDuplicate) {
           setShowSavedToast(true);
-          // Lưu lên Sheets lập tức
           if (sheetsUrl) {
             saveToSheets(sheetsUrl, 'ADD_WORD', newWord);
           }
@@ -155,12 +140,6 @@ const App: React.FC = () => {
       setSearchQuery(transcript);
       handleSearch(undefined, transcript);
     });
-  };
-
-  const deleteWord = (id: string) => {
-    if (confirm("Bạn có chắc chắn muốn xóa mục này không?")) {
-      setSavedWords(prev => prev.filter(w => w.id !== id));
-    }
   };
 
   const updateWord = (id: string, updatedFields: Partial<GermanWord>) => {
@@ -252,7 +231,6 @@ const App: React.FC = () => {
           <NavItem active={activeTab === AppTab.SEARCH} onClick={() => setActiveTab(AppTab.SEARCH)} icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>} label="Tra cứu AI" />
           <NavItem active={activeTab === AppTab.COLLECTION} onClick={() => setActiveTab(AppTab.COLLECTION)} icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.247 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>} label="Thư viện" />
           <NavItem active={activeTab === AppTab.LEARN} onClick={() => { setActiveTab(AppTab.LEARN); setFinishedLearning(false); }} icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>} label="Học thuộc" />
-          {/* Fix: Removed non-existent setQuizScore(null) call */}
           <NavItem active={activeTab === AppTab.QUIZ} onClick={() => setActiveTab(AppTab.QUIZ)} icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.674a1 1 0 00.922-.617l2.104-5.145A1 1 0 0016.441 10h-2.104l.833-4.167A1 1 0 0014.204 4H9.796a1 1 0 00-.97 1.208l.833 4.167H7.559a1 1 0 00-.922 1.238l2.104 5.145A1 1 0 009.663 17z" /></svg>} label="Luyện tập AI" />
           <NavItem active={activeTab === AppTab.LISTENING} onClick={() => setActiveTab(AppTab.LISTENING)} icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>} label="Nghe & Nói" />
           <NavItem active={activeTab === AppTab.DICTATION} onClick={() => setActiveTab(AppTab.DICTATION)} icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>} label="Chép chính tả" />
@@ -312,7 +290,6 @@ const App: React.FC = () => {
                 <WordCard 
                   key={word.id} 
                   word={word} 
-                  onDelete={deleteWord} 
                   onUpdate={updateWord}
                 />
               ))}
@@ -379,7 +356,7 @@ const App: React.FC = () => {
                 {lastSync && <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Đồng bộ gần nhất: {lastSync}</p>}
                 <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-2xl">
                   <p className="text-xs text-indigo-700 leading-relaxed font-medium">
-                    <strong>Mẹo:</strong> Khi bạn dán link, ứng dụng sẽ tự động tải các từ cũ từ Sheets về máy và đẩy các từ mới từ máy lên Sheets. Mọi tiến độ học tập (IPA, mạo từ, số nhiều) đều được bảo toàn.
+                    <strong>Mẹo:</strong> Mọi từ vựng bạn tra cứu đều được lưu vĩnh viễn trong kho dữ liệu của bạn và đồng bộ lên Google Sheets.
                   </p>
                 </div>
               </div>

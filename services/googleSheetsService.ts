@@ -2,7 +2,7 @@
 import { GermanWord } from "../types";
 
 export interface SheetsPayload {
-  action: 'ADD_WORD' | 'UPDATE_PROGRESS';
+  action: 'ADD_WORD' | 'UPDATE_PROGRESS' | 'DELETE_WORD';
   data: any;
   timestamp: number;
 }
@@ -13,7 +13,6 @@ export interface SheetsPayload {
 export const syncFromSheets = async (url: string): Promise<GermanWord[]> => {
   if (!url) return [];
   try {
-    // Thêm cache-buster để tránh lấy dữ liệu cũ từ trình duyệt
     const syncUrl = new URL(url);
     syncUrl.searchParams.set('_t', Date.now().toString());
 
@@ -51,7 +50,7 @@ export const syncFromSheets = async (url: string): Promise<GermanWord[]> => {
 /**
  * Lưu dữ liệu lên Google Sheets. 
  */
-export const saveToSheets = async (url: string, action: 'ADD_WORD' | 'UPDATE_PROGRESS', data: any): Promise<boolean> => {
+export const saveToSheets = async (url: string, action: 'ADD_WORD' | 'UPDATE_PROGRESS' | 'DELETE_WORD', data: any): Promise<boolean> => {
   if (!url) return false;
   
   try {
@@ -67,12 +66,13 @@ export const saveToSheets = async (url: string, action: 'ADD_WORD' | 'UPDATE_PRO
         plural: data.plural || "",
         createdAt: data.createdAt,
         masteryLevel: data.masteryLevel || 0
+      } : action === 'DELETE_WORD' ? {
+        id: data.id,
+        word: data.word
       } : data,
       timestamp: Date.now()
     };
 
-    // Sử dụng 'no-cors' cho POST tới Google Apps Script là cách an toàn nhất để tránh lỗi CORS
-    // Mặc dù ta không đọc được response, nhưng dữ liệu vẫn sẽ được gửi đi
     await fetch(url, {
       method: "POST",
       mode: "no-cors",

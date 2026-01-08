@@ -5,7 +5,6 @@ import { playGermanAudio } from '../services/audioService';
 
 interface WordCardProps {
   word: GermanWord;
-  onDelete?: (id: string) => void;
   onUpdate?: (id: string, updatedFields: Partial<GermanWord>) => void;
   showActions?: boolean;
   autoPlay?: boolean;
@@ -20,7 +19,7 @@ const getGenderColor = (gender: Gender) => {
   }
 };
 
-const WordCard: React.FC<WordCardProps> = ({ word, onDelete, onUpdate, showActions = true, autoPlay = false }) => {
+const WordCard: React.FC<WordCardProps> = ({ word, onUpdate, showActions = true, autoPlay = false }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedMeaning, setEditedMeaning] = useState(word.meaning);
@@ -92,22 +91,12 @@ const WordCard: React.FC<WordCardProps> = ({ word, onDelete, onUpdate, showActio
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6c0 1.1.9 2 2 2h3l4.5 4.5c.3.3.8.1.8-.4v-18c0-.5-.5-.7-.8-.4L8 7H5c-1.1 0-2 .9-2 2zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
             </button>
             {showActions && (
-              <div className="flex flex-col gap-2">
-                <button 
-                  onClick={() => setIsEditing(!isEditing)}
-                  className={`p-3 rounded-2xl transition-all shadow-sm ${isEditing ? 'bg-amber-100 text-amber-600' : 'bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-indigo-600'}`}
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                </button>
-                {onDelete && (
-                  <button 
-                    onClick={() => onDelete(word.id)}
-                    className="p-3 rounded-2xl bg-red-50 text-red-400 hover:bg-red-500 hover:text-white transition-all shadow-sm"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                  </button>
-                )}
-              </div>
+              <button 
+                onClick={() => setIsEditing(!isEditing)}
+                className={`p-3 rounded-2xl transition-all shadow-sm ${isEditing ? 'bg-amber-100 text-amber-600' : 'bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-indigo-600'}`}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+              </button>
             )}
           </div>
         </div>

@@ -14,16 +14,18 @@ export interface VerbForms {
 export interface GermanWord {
   id: string;
   word: string;
-  ipa?: string; // Phiên âm quốc tế
+  originalInput?: string; 
+  correctionNote?: string; 
+  ipa?: string;
   gender: Gender;
   plural: string;
   meaning: string;
   synonyms: string[];
   examples: ExampleSentence[];
   partOfSpeech: string;
-  verbForms?: VerbForms; // Chỉ dành cho động từ
+  verbForms?: VerbForms;
   createdAt: number;
-  masteryLevel: number; // 0-100
+  masteryLevel: number;
 }
 
 export interface QuizQuestion {
@@ -41,5 +43,6 @@ export enum AppTab {
   LEARN = 'learn',
   QUIZ = 'quiz',
   LISTENING = 'listening',
+  DICTATION = 'dictation',
   STATS = 'stats'
 }

@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { GermanWord } from '../types';
-import { generateSpeech } from '../services/geminiService';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
+import { playGermanAudio } from '../services/audioService';
 
 interface ListeningSessionProps {
   words: GermanWord[];
@@ -29,31 +29,12 @@ const ListeningSession: React.FC<ListeningSessionProps> = ({ words }) => {
 
   const currentText = mode === 'word' ? currentWord.word : currentWord.examples[0]?.german || currentWord.word;
 
-  const playAudio = async (text: string) => {
-    if (isPlaying) return;
-    setIsPlaying(true);
-    try {
-      const audioData = await generateSpeech(text);
-      if (!audioData) return;
-      
-      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-      const binaryString = atob(audioData);
-      const dataInt16 = new Int16Array(new Uint8Array(binaryString.length).map((_, i) => binaryString.charCodeAt(i)).buffer);
-      const buffer = audioCtx.createBuffer(1, dataInt16.length, 24000);
-      const channelData = buffer.getChannelData(0);
-      for (let i = 0; i < dataInt16.length; i++) {
-        channelData[i] = dataInt16[i] / 32768.0;
-      }
-
-      const source = audioCtx.createBufferSource();
-      source.buffer = buffer;
-      source.connect(audioCtx.destination);
-      source.onended = () => setIsPlaying(false);
-      source.start();
-    } catch (err) {
-      console.error(err);
-      setIsPlaying(false);
-    }
+  const handlePlay = () => {
+    playGermanAudio(
+      currentText,
+      () => setIsPlaying(true),
+      () => setIsPlaying(false)
+    );
   };
 
   const checkWriting = () => {
@@ -73,7 +54,6 @@ const ListeningSession: React.FC<ListeningSessionProps> = ({ words }) => {
       const cleanTranscript = transcript.trim().toLowerCase().replace(/[.,!?]/g, '');
       const cleanTarget = currentText.toLowerCase().replace(/[.,!?]/g, '');
       
-      // Kiểm tra độ tương đồng cơ bản
       if (cleanTranscript.includes(cleanTarget) || cleanTarget.includes(cleanTranscript) || cleanTranscript.split(' ').some(w => cleanTarget.includes(w))) {
         setSpeakingFeedback({ type: 'success', msg: `Khá tốt! Bạn phát âm: "${transcript}"` });
       } else {
@@ -87,7 +67,6 @@ const ListeningSession: React.FC<ListeningSessionProps> = ({ words }) => {
     setFeedback({ type: 'none', msg: '' });
     setSpeakingFeedback({ type: 'none', msg: '' });
     setShowTranscript(false);
-    // Random mode cho câu tiếp theo
     setMode(Math.random() > 0.5 ? 'sentence' : 'word');
 
     if (currentIndex < sessionWords.length - 1) {
@@ -110,17 +89,16 @@ const ListeningSession: React.FC<ListeningSessionProps> = ({ words }) => {
       <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center gap-6">
         <div className="flex items-center gap-4">
           <button 
-            onClick={() => playAudio(currentText)}
+            onClick={handlePlay}
             disabled={isPlaying}
             className={`w-20 h-20 rounded-full flex items-center justify-center transition-all ${isPlaying ? 'bg-indigo-100 text-indigo-600 scale-110 shadow-inner' : 'bg-indigo-600 text-white shadow-xl shadow-indigo-100 hover:scale-105 hover:bg-indigo-700'}`}
           >
-            <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6c0 1.1.9 2 2 2h3l4.5 4.5c.3.3.8.1.8-.4v-18c0-.5-.5-.7-.8-.4L8 7H5c-1.1 0-2 .9-2 2zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+            <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6c0 1.1.9 2 2 2h3l4.5 4.5c.3.3.8.1.8-.4v-18c0-.5-.5-.7-.8-.4L8 7H5c-1.1 0-2 .9-2 2zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
           </button>
           
           <button 
             onClick={() => setShowTranscript(!showTranscript)}
             className="p-3 rounded-xl bg-slate-50 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all border border-slate-100"
-            title="Xem nội dung"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
           </button>
